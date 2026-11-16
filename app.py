@@ -53,7 +53,37 @@ QUESTIONS = [
 {"topic":"Windows Forensics","q":"Which artefact may show USB connection history?","options":["USB Registry entries","Wallpaper cache","Recycle Bin icon","Screen size"],"a":0,"why":"Windows Registry artefacts can record connected USB device details."},
 {"topic":"Multimedia","q":"Video metadata shows a creation time. Key caveat?","options":["Cannot be edited","May be altered; corroborate","Proves location","Proves continuity"],"a":1,"why":"Metadata can be modified and should be checked against independent evidence."},
 {"topic":"IP Analysis","q":"CGNAT maps many users to one public IP. What is essential?","options":["Country lookup","Domain only","Timestamp, source port and provider logs","Reverse DNS"],"a":2,"why":"Precise time and port details are needed to correlate provider records."},
-{"topic":"Evidence Integrity","q":"A forensic image hash mismatches. First action?","options":["Ignore","Edit hash","Delete source","Preserve logs and investigate"],"a":3,"why":"Stop and investigate the discrepancy; never conceal or overwrite evidence."}
+{"topic":"Evidence Integrity","q":"A forensic image hash mismatches. First action?","options":["Ignore","Edit hash","Delete source","Preserve logs and investigate"],"a":3,"why":"Stop and investigate the discrepancy; never conceal or overwrite evidence."},
+{"topic": "Evidence Preservation", "q": "An investigator receives a powered-on laptop. Which action best protects the original state?", "options": ["Browse user folders", "Document condition and isolate appropriately", "Install forensic tools", "Delete temporary files"], "a": 1, "why": "Documenting condition and controlled isolation reduces unintended changes."},
+{"topic": "Chain of Custody", "q": "A sealed evidence bag arrives with a broken seal. What should the examiner do first?", "options": ["Reseal without comment", "Record discrepancy and notify authority", "Proceed without noting it", "Discard the device"], "a": 1, "why": "Any seal discrepancy must be documented and escalated before examination."},
+{"topic": "Hashing", "q": "Which statement about SHA-256 hashes is accurate?", "options": ["They prove who created a file", "They help verify data integrity", "They encrypt the evidence", "They establish file relevance"], "a": 1, "why": "A cryptographic hash supports integrity comparison, not authorship or relevance."},
+{"topic": "Disk Forensics", "q": "A suspect deletes a file but the disk is not overwritten. What may remain?", "options": ["Recoverable file-system remnants", "Only the filename in RAM", "Nothing after deletion", "A guaranteed complete copy"], "a": 0, "why": "Deleted content may remain in unallocated space until overwritten."},
+{"topic": "Mobile Forensics", "q": "A mobile device is locked and powered on. What should guide the next step?", "options": ["Immediate factory reset", "Case-specific lawful authority and preservation plan", "Repeated passcode guesses", "Connect to an unknown charger"], "a": 1, "why": "The examiner should preserve state and follow authority, risk and validated procedures."},
+{"topic": "Mobile Forensics", "q": "Why should an examiner document the phone's network state?", "options": ["It identifies the owner conclusively", "It may affect remote access and data changes", "It reveals every deleted message", "It replaces acquisition logs"], "a": 1, "why": "Network connectivity can permit remote actions or synchronisation that alter evidence."},
+{"topic": "Network Forensics", "q": "A packet capture lacks payload because traffic is encrypted. What remains useful?", "options": ["Flow metadata and timing", "Plaintext passwords", "Guaranteed message contents", "User intent"], "a": 0, "why": "Endpoints, ports, timing, sizes and flow patterns can still support investigation."},
+{"topic": "Network Forensics", "q": "A firewall log uses local time while server logs use UTC. What is essential?", "options": ["Ignore timestamps", "Normalize time zones and record offsets", "Sort alphabetically", "Use file creation dates only"], "a": 1, "why": "Time normalization is necessary for reliable event correlation."},
+{"topic": "OSINT", "q": "A public social-media post is edited after collection. What strengthens the record?", "options": ["Rely on memory", "Preserve URL, timestamp, capture and hash", "Use only a paraphrase", "Assume the edit is harmless"], "a": 1, "why": "A documented capture and integrity hash help preserve what was observed."},
+{"topic": "OSINT", "q": "A username appears on several platforms. What is the safest attribution approach?", "options": ["Treat names as unique", "Corroborate with independent identifiers", "Assume one operator", "Use profile image alone"], "a": 1, "why": "A reused username alone is insufficient to attribute accounts to one person."},
+{"topic": "Cryptocurrency", "q": "A transaction is visible on a public blockchain. Which conclusion is justified?", "options": ["The wallet owner's legal identity is known", "The transaction is recorded on-chain", "The sender's motive is established", "The device used is identified"], "a": 1, "why": "Public ledger data records transaction details but does not inherently identify a person."},
+{"topic": "Cryptocurrency", "q": "An exchange account is linked to a wallet address. What should investigators seek?", "options": ["Only token price history", "Lawfully obtained KYC and account records", "A social-media poll", "A wallet logo"], "a": 1, "why": "Exchange account records may provide attribution leads when obtained through lawful process."},
+{"topic": "Financial Forensics", "q": "Several small transfers occur just below a reporting threshold. What is a useful analytical step?", "options": ["Aggregate by time, account and relationship", "Ignore individual transactions", "Assume legitimate activity", "Review only the final balance"], "a": 0, "why": "Aggregation and relationship analysis can reveal structuring patterns for further examination."},
+{"topic": "Financial Forensics", "q": "A bank statement has a debit but the ledger has no matching entry. What should be done?", "options": ["Create a fictional entry", "Flag and reconcile the unmatched transaction", "Delete the bank row", "Assume a bank error"], "a": 1, "why": "Unmatched items should be documented and investigated rather than silently altered."},
+{"topic": "AI Investigations", "q": "An AI classifier has high accuracy but poor recall for rare fraud cases. What is the risk?", "options": ["Too many rare cases are missed", "Every alert is correct", "No false positives occur", "The model proves intent"], "a": 0, "why": "Low recall means a substantial share of actual positive cases may be missed."},
+{"topic": "AI Investigations", "q": "A model flags a person based on opaque features. What is the proper investigative use?", "options": ["Treat the score as proof", "Use it as a lead and independently validate evidence", "Issue a finding automatically", "Discard audit records"], "a": 1, "why": "Model outputs should guide review, not replace independent evidential validation."},
+{"topic": "Cloud Forensics", "q": "A cloud account shows a login from an unfamiliar IP. What should be correlated?", "options": ["Authentication, device and audit logs", "Profile theme only", "Current weather", "Local wallpaper"], "a": 0, "why": "Correlating authentication and audit events can help assess whether access was unauthorized."},
+{"topic": "Cloud Forensics", "q": "Why is cloud data acquisition time-sensitive?", "options": ["Retention and lifecycle policies may remove records", "Cloud logs never change", "All data is permanent", "Time zones are irrelevant"], "a": 0, "why": "Provider retention and lifecycle policies can limit the availability of logs and content."},
+{"topic": "Windows Forensics", "q": "A Windows event log is cleared. What is a useful next step?", "options": ["Assume no activity occurred", "Seek other artefacts and centralized log copies", "Recreate events manually", "Format the disk"], "a": 1, "why": "Other local artefacts, backups and centralized logs may preserve relevant evidence."},
+{"topic": "Windows Forensics", "q": "Prefetch artefacts may help establish which fact?", "options": ["Program execution traces", "Exact user intent", "Legal ownership", "Network payload contents"], "a": 0, "why": "Prefetch can provide evidence that an application was executed, subject to system context."},
+{"topic": "Email Forensics", "q": "Which email header field is especially useful for tracing relay path?", "options": ["Received", "Subject", "Display name", "Signature"], "a": 0, "why": "Received headers can document mail-server hops, though they require validation."},
+{"topic": "Email Forensics", "q": "A display name claims to be a bank officer. What should be checked?", "options": ["Only the display name", "Full headers, sending domain and authentication results", "Font and colour", "The recipient's contacts"], "a": 1, "why": "Display names are easy to spoof; technical header evidence provides stronger leads."},
+{"topic": "Multimedia Forensics", "q": "A video has a discontinuity in frame timestamps. What is appropriate?", "options": ["Conclude fabrication immediately", "Examine encoding, metadata and continuity with corroboration", "Ignore the gap", "Change the timestamps"], "a": 1, "why": "Discontinuities warrant technical analysis and corroboration, not an immediate conclusion."},
+{"topic": "Multimedia Forensics", "q": "A CCTV export is converted to another format. What should be retained?", "options": ["Only the converted clip", "Native export, conversion method and hashes", "A screenshot of the player", "Only a verbal description"], "a": 1, "why": "Retaining the native export and documenting conversion supports reproducibility."},
+{"topic": "Incident Response", "q": "A server is actively exfiltrating data. What should guide containment?", "options": ["Preservation needs and incident impact", "Delete all logs", "Power off every device immediately", "Wait until the next day"], "a": 0, "why": "Containment should balance stopping harm with preserving volatile evidence and service needs."},
+{"topic": "Incident Response", "q": "An employee reports a suspected phishing email. What is a useful first step?", "options": ["Forward it to everyone", "Preserve the message and headers for analysis", "Click every link", "Delete the mailbox"], "a": 1, "why": "Preserving the original message and headers enables safe technical examination."},
+{"topic": "Forensic Reporting", "q": "A report includes a tool-generated finding. What makes it reproducible?", "options": ["Tool name and version, settings, method and logs", "Only the conclusion", "A verbal assurance", "An edited screenshot"], "a": 0, "why": "Method, tool versions, settings and logs allow another examiner to understand and repeat the work."},
+{"topic": "Forensic Reporting", "q": "An examiner cannot determine whether a user or malware created a file. How should this be reported?", "options": ["State certainty anyway", "Describe findings and limitations accurately", "Omit the file", "Attribute it to the suspect"], "a": 1, "why": "A defensible report distinguishes observed facts from interpretation and limitations."},
+{"topic": "Legal Procedure", "q": "A digital record is obtained from a third-party service. What is important?", "options": ["Document lawful authority and acquisition provenance", "Assume public availability", "Edit the export", "Skip source details"], "a": 0, "why": "Authority, provenance and acquisition documentation support admissibility and reliability."},
+{"topic": "Evidence Handling", "q": "A forensic workstation clock differs from the evidence system clock. What should be recorded?", "options": ["Only the workstation time", "Clock offsets and time sources", "No timestamps", "A guessed correction"], "a": 1, "why": "Recording clock offsets helps interpret timestamps accurately across systems."}
 ]
 
 def db_conn():
@@ -65,8 +95,12 @@ def db_conn():
         submitted_at TEXT NOT NULL,
         score INTEGER NOT NULL,
         total INTEGER NOT NULL,
-        answers_json TEXT NOT NULL
+        answers_json TEXT NOT NULL,
+        test_id TEXT
     )""")
+    sub_cols = [r[1] for r in conn.execute("PRAGMA table_info(submissions)").fetchall()]
+    if "test_id" not in sub_cols:
+        conn.execute("ALTER TABLE submissions ADD COLUMN test_id TEXT")
     conn.execute("""CREATE TABLE IF NOT EXISTS assessment_control (
         id INTEGER PRIMARY KEY CHECK (id = 1),
         is_active INTEGER NOT NULL DEFAULT 0,
@@ -77,6 +111,11 @@ def db_conn():
         participant_id TEXT PRIMARY KEY, trainee_name TEXT NOT NULL,
         organisation TEXT, joined_at TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'Waiting'
     )""")
+    control_cols = [r[1] for r in conn.execute("PRAGMA table_info(assessment_control)").fetchall()]
+    if "test_id" not in control_cols:
+        conn.execute("ALTER TABLE assessment_control ADD COLUMN test_id TEXT")
+    if "selected_question_ids" not in control_cols:
+        conn.execute("ALTER TABLE assessment_control ADD COLUMN selected_question_ids TEXT")
     conn.execute("INSERT OR IGNORE INTO assessment_control (id, is_active, start_at, duration_minutes) VALUES (1, 0, NULL, 10)")
     conn.execute("""CREATE TABLE IF NOT EXISTS participant_answers (
         participant_id TEXT NOT NULL, question_no INTEGER NOT NULL, answer TEXT,
@@ -92,21 +131,42 @@ def db_conn():
         conn.execute("ALTER TABLE participants ADD COLUMN attempt_start_at REAL")
     if "attempt_duration_minutes" not in columns:
         conn.execute("ALTER TABLE participants ADD COLUMN attempt_duration_minutes INTEGER")
+    if "question_order_json" not in columns:
+        conn.execute("ALTER TABLE participants ADD COLUMN question_order_json TEXT")
+    if "paused_remaining_seconds" not in columns:
+        conn.execute("ALTER TABLE participants ADD COLUMN paused_remaining_seconds INTEGER")
     conn.commit()
     return conn
 
 def get_test_control():
     conn = db_conn()
-    row = conn.execute("SELECT is_active, start_at, duration_minutes FROM assessment_control WHERE id=1").fetchone()
+    row = conn.execute("SELECT is_active, start_at, duration_minutes, test_id, selected_question_ids FROM assessment_control WHERE id=1").fetchone()
     conn.close()
-    return {"active": bool(row[0]), "start_at": row[1], "duration": int(row[2])}
+    return {"active": bool(row[0]), "start_at": row[1], "duration": int(row[2]),
+            "test_id": row[3], "selected_ids": json.loads(row[4]) if row[4] else []}
 
-def set_test_control(active, start_at=None, duration=10):
+def set_test_control(active, start_at=None, duration=10, test_id=None, selected_ids=None):
     conn = db_conn()
-    conn.execute("UPDATE assessment_control SET is_active=?, start_at=?, duration_minutes=? WHERE id=1",
-                 (1 if active else 0, start_at, int(duration)))
+    conn.execute("UPDATE assessment_control SET is_active=?, start_at=?, duration_minutes=?, test_id=?, selected_question_ids=? WHERE id=1",
+                 (1 if active else 0, start_at, int(duration), test_id,
+                  json.dumps(selected_ids) if selected_ids is not None else None))
     conn.commit()
     conn.close()
+
+def begin_group_test(duration):
+    # A test ID identifies one fixed 15-question sample shared by all trainees.
+    test_id = "DGIT-" + datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S") + "-" + uuid.uuid4().hex[:5].upper()
+    selected_ids = random.SystemRandom().sample(range(len(QUESTIONS)), 15)
+    set_test_control(True, datetime.now(timezone.utc).timestamp(), duration, test_id, selected_ids)
+    conn = db_conn()
+    conn.execute("""UPDATE participants SET status='Waiting', attempt_start_at=NULL,
+        attempt_duration_minutes=NULL, question_order_json=NULL, paused_remaining_seconds=NULL""")
+    conn.commit()
+    conn.close()
+    for p in list_participants():
+        clear_answers(p[0])
+        log_event(p[0], p[1], "New test session", f"Test ID {test_id}; 15-question set assigned")
+    return test_id
 
 def log_event(pid, name, event, details=""):
     conn = db_conn()
@@ -139,7 +199,7 @@ def register_participant(pid, name, organisation):
 def list_participants():
     conn = db_conn()
     rows = conn.execute("""SELECT participant_id, trainee_name, organisation, joined_at, status,
-        attempt_start_at, attempt_duration_minutes FROM participants ORDER BY joined_at""").fetchall()
+        attempt_start_at, attempt_duration_minutes, question_order_json, paused_remaining_seconds FROM participants ORDER BY joined_at""").fetchall()
     conn.close()
     return rows
 
@@ -148,7 +208,7 @@ def get_participant(pid):
         return None
     conn = db_conn()
     row = conn.execute("""SELECT participant_id, trainee_name, organisation, joined_at, status,
-        attempt_start_at, attempt_duration_minutes FROM participants WHERE participant_id=?""", (pid,)).fetchone()
+        attempt_start_at, attempt_duration_minutes, question_order_json, paused_remaining_seconds FROM participants WHERE participant_id=?""", (pid,)).fetchone()
     conn.close()
     return row
 
@@ -196,19 +256,51 @@ def load_logs(pid=None):
     return rows
 
 def restart_participant(pid, name, duration):
+    control = get_test_control()
+    order = list(control["selected_ids"])
+    random.SystemRandom().shuffle(order)
     clear_answers(pid)
     conn = db_conn()
-    conn.execute("""UPDATE participants SET status='Started', attempt_start_at=?, attempt_duration_minutes=?
-        WHERE participant_id=?""", (datetime.now(timezone.utc).timestamp(), int(duration), pid))
+    conn.execute("""UPDATE participants SET status='Started', attempt_start_at=?, attempt_duration_minutes=?,
+        question_order_json=?, paused_remaining_seconds=NULL WHERE participant_id=?""",
+        (datetime.now(timezone.utc).timestamp(), int(duration), json.dumps(order), pid))
     conn.commit()
     conn.close()
-    log_event(pid, name, "Attempt restarted by admin", f"New duration: {duration} minutes")
+    log_event(pid, name, "Attempt restarted by admin", f"Test ID {control.get('test_id')}; duration {duration} minutes; order reshuffled")
 
-def save_local(name, organisation, answers, score):
+def pause_participant(pid, name):
+    p = get_participant(pid)
+    if not p or not p[5]:
+        return
+    if p[4] == "Paused":
+        return
+    duration = int(p[6] or 10)
+    left = max(0, int(float(p[5]) + duration*60 - datetime.now(timezone.utc).timestamp()))
+    conn = db_conn()
+    conn.execute("UPDATE participants SET status='Paused', paused_remaining_seconds=? WHERE participant_id=?", (left, pid))
+    conn.commit()
+    conn.close()
+    log_event(pid, name, "Paused by admin", f"{left} seconds remaining")
+
+def resume_participant(pid, name):
+    p = get_participant(pid)
+    if not p or p[4] != "Paused":
+        return
+    left = int(p[8] or 0)
+    duration = int(p[6] or 10)
+    new_start = datetime.now(timezone.utc).timestamp() - (duration*60-left)
+    conn = db_conn()
+    conn.execute("UPDATE participants SET status='Started', attempt_start_at=?, paused_remaining_seconds=NULL WHERE participant_id=?",
+                 (new_start, pid))
+    conn.commit()
+    conn.close()
+    log_event(pid, name, "Resumed by admin", f"{left} seconds remaining at resume")
+
+def save_local(name, organisation, answers, score, test_id=None):
     conn = db_conn()
     conn.execute(
-        "INSERT INTO submissions (trainee_name, organisation, submitted_at, score, total, answers_json) VALUES (?, ?, ?, ?, ?, ?)",
-        (name, organisation, datetime.now(timezone.utc).isoformat(), score, len(QUESTIONS), json.dumps(answers))
+        "INSERT INTO submissions (trainee_name, organisation, submitted_at, score, total, answers_json, test_id) VALUES (?, ?, ?, ?, ?, ?, ?)",
+        (name, organisation, datetime.now(timezone.utc).isoformat(), score, len(answers), json.dumps(answers), test_id)
     )
     conn.commit()
     conn.close()
@@ -221,6 +313,7 @@ def get_secret(key, default=None):
 
 def save_submission(name, organisation, answers, score):
     # Persistent cloud option: configure Google Sheets in Streamlit secrets.
+    test_id = get_test_control().get("test_id")
     sheet_id = get_secret("GOOGLE_SHEET_ID")
     service_account = get_secret("gcp_service_account")
     if sheet_id and service_account:
@@ -232,19 +325,19 @@ def save_submission(name, organisation, answers, score):
             client = gspread.authorize(creds)
             sheet = client.open_by_key(sheet_id).sheet1
             if not sheet.get_all_values():
-                sheet.append_row(["Trainee Name", "Organisation", "Submitted At (UTC)", "Score", "Total", "Answers JSON"])
-            sheet.append_row([name, organisation, datetime.now(timezone.utc).isoformat(), score, len(QUESTIONS), json.dumps(answers)])
+                sheet.append_row(["Trainee Name", "Organisation", "Submitted At (UTC)", "Score", "Total Questions", "Answers JSON", "Test ID"])
+            sheet.append_row([name, organisation, datetime.now(timezone.utc).isoformat(), score, len(answers), json.dumps(answers), test_id])
             return "sheets"
         except Exception as e:
             st.error("Google Sheets save failed. Please contact the administrator. Submission was not saved to the cloud sheet.")
             st.exception(e)
             return None
-    save_local(name, organisation, answers, score)
+    save_local(name, organisation, answers, score, test_id)
     return "sqlite"
 
 def load_results():
     conn = db_conn()
-    rows = conn.execute("SELECT trainee_name, organisation, submitted_at, score, total, answers_json FROM submissions ORDER BY id DESC").fetchall()
+    rows = conn.execute("SELECT trainee_name, organisation, submitted_at, score, total, answers_json, test_id FROM submissions ORDER BY id DESC").fetchall()
     conn.close()
     return rows
 
@@ -278,13 +371,14 @@ if page == "Trainee Assessment":
     if token and not st.session_state.get("registered", False):
         restored = get_participant(token)
         if restored:
-            st.session_state.participant_id = restored[0]
-            st.session_state.trainee_name = restored[1]
-            st.session_state.organisation = restored[2] or ""
-            st.session_state.registered = True
+            st.session_state.update({"participant_id": restored[0], "trainee_name": restored[1],
+                                     "organisation": restored[2] or "", "registered": True})
 
     control = get_test_control()
     if not st.session_state.get("registered", False):
+        if control["active"]:
+            st.error("This test has already started. Registration is closed. Contact the administrator.")
+            st.stop()
         st.markdown('<div class="timer">TEST NOT STARTED — WAITING FOR ADMIN</div>', unsafe_allow_html=True)
         with st.form("trainee_registration"):
             st.subheader("Trainee registration")
@@ -296,7 +390,7 @@ if page == "Trainee Assessment":
             if not clean_name:
                 st.error("Please enter your full name.")
             elif find_participant_by_name(clean_name):
-                st.error("This name is already registered. Please use the existing session or contact the administrator.")
+                st.error("This name is already registered. Please use the existing session link or contact the administrator.")
             else:
                 pid = str(uuid.uuid4())
                 if register_participant(pid, clean_name, organisation.strip()):
@@ -306,7 +400,7 @@ if page == "Trainee Assessment":
                     st.rerun()
                 else:
                     st.error("This name is already registered.")
-        st_autorefresh(interval=2500, key="registration_refresh")
+        st_autorefresh(interval=1500, key="registration_poll")
         st.stop()
 
     pid = st.session_state.participant_id
@@ -316,7 +410,7 @@ if page == "Trainee Assessment":
         st.stop()
     trainee_name, organisation = p[1], p[2] or ""
     st.markdown(f"### Trainee: **{trainee_name}**")
-    st.caption(f"Organisation: {organisation or 'Not provided'}")
+    st.caption(f"Test ID: **{control.get('test_id') or 'Not started'}** | Organisation: {organisation or 'Not provided'}")
 
     if p[4].startswith("Submitted"):
         st.session_state.submitted = True
@@ -324,71 +418,95 @@ if page == "Trainee Assessment":
         st.success("Your assessment has been submitted. Your responses are recorded.")
         st.stop()
 
-    # Start each registered trainee automatically when admin activates the assessment.
+    # The test start is shared; the individual timer/order is persisted on first trainee refresh.
     if control["active"] and not p[5]:
+        user_order = list(control["selected_ids"])
+        random.SystemRandom().shuffle(user_order)
         conn = db_conn()
-        conn.execute("UPDATE participants SET attempt_start_at=?, attempt_duration_minutes=? WHERE participant_id=? AND attempt_start_at IS NULL",
-                     (control["start_at"], control["duration"], pid))
+        conn.execute("""UPDATE participants SET attempt_start_at=?, attempt_duration_minutes=?,
+            question_order_json=?, paused_remaining_seconds=NULL, status='Started'
+            WHERE participant_id=? AND attempt_start_at IS NULL""",
+            (control["start_at"], control["duration"], json.dumps(user_order), pid))
         conn.commit()
         conn.close()
-        log_event(pid, trainee_name, "Test started automatically", "Administrator activated the assessment")
+        log_event(pid, trainee_name, "Test started automatically",
+                  f"Test ID {control['test_id']}; 15 questions assigned in participant-specific order")
         p = get_participant(pid)
 
     if not p[5]:
         st.markdown('<div class="timer">TEST NOT STARTED — WAITING FOR ADMIN</div>', unsafe_allow_html=True)
-        st.info("Waiting room is active. This page refreshes automatically; the quiz will open as soon as the administrator starts it.")
-        st_autorefresh(interval=1500, key="waiting_room_refresh")
+        st.info("Waiting room is active. This page checks for the administrator's start command automatically.")
+        st_autorefresh(interval=1200, key="trainee_waiting_poll")
         st.stop()
 
+    if p[4] == "Paused":
+        paused_left = int(p[8] or 0)
+        mm, ss = divmod(paused_left, 60)
+        st.markdown(f'<div class="timer">PAUSED — {mm:02d}:{ss:02d} REMAINING</div>', unsafe_allow_html=True)
+        st.warning("Your assessment is temporarily paused by the administrator. Your saved answers are retained.")
+        st_autorefresh(interval=1500, key="trainee_paused_poll")
+        st.stop()
+
+    order = json.loads(p[7]) if p[7] else list(control["selected_ids"])
     start_at = float(p[5])
     duration = int(p[6] or control["duration"])
     remaining = max(0, int(start_at + duration * 60 - datetime.now(timezone.utc).timestamp()))
     mm, ss = divmod(remaining, 60)
     st.markdown(f'<div class="timer">TIME REMAINING  {mm:02d}:{ss:02d}</div>', unsafe_allow_html=True)
-    if p[4] == "Waiting":
-        update_participant_status(pid, "Started")
 
     if remaining <= 0:
         st.warning("Time is over. Your saved answers are being submitted.")
         saved = load_answers(pid)
-        responses = {str(i+1): saved.get(i+1) for i in range(len(QUESTIONS))}
-        score = sum(1 for i, q in enumerate(QUESTIONS) if responses[str(i+1)] == q["options"][q["a"]])
+        responses = {str(qid+1): saved.get(qid+1) for qid in order}
+        score = sum(1 for qid in order if responses[str(qid+1)] == QUESTIONS[qid]["options"][QUESTIONS[qid]["a"]])
         if save_submission(trainee_name, organisation, responses, score):
             update_participant_status(pid, "Submitted (time expired)")
-            log_event(pid, trainee_name, "Auto-submitted", "Timer expired")
+            log_event(pid, trainee_name, "Auto-submitted", f"Test ID {control['test_id']}; timer expired")
             st.session_state.submitted = True
             st.rerun()
         st.stop()
 
-    st_autorefresh(interval=1000, key="quiz_timer_refresh")
-    st.caption("Answers are saved automatically. Refreshing or reopening this page restores your answers and remaining time.")
+    st_autorefresh(interval=1000, key="trainee_quiz_poll")
+    st.caption("You may skip questions. Your selected answers are saved automatically; refresh will not reset your attempt.")
     saved = load_answers(pid)
-    for i, q in enumerate(QUESTIONS):
-        qno = i + 1
-        key = f"q_{qno}"
+    for display_no, qid in enumerate(order, start=1):
+        q = QUESTIONS[qid]
+        key = f"ans_{qid}"
         if key not in st.session_state:
-            st.session_state[key] = saved.get(qno)
-        st.markdown(f'<div class="question-card"><strong>Q{qno}.</strong> {q["q"]}</div>', unsafe_allow_html=True)
+            st.session_state[key] = saved.get(qid+1)
+        st.markdown(f'<div class="question-card"><strong>Question {display_no} of 15.</strong> {q["q"]}</div>', unsafe_allow_html=True)
         st.radio("Choose one", q["options"], index=None, key=key, label_visibility="collapsed")
         selected = st.session_state.get(key)
-        if selected is not None and selected != saved.get(qno):
-            save_answer(pid, trainee_name, qno, selected)
-            saved[qno] = selected
+        if selected is not None and selected != saved.get(qid+1):
+            save_answer(pid, trainee_name, qid+1, selected)
+            saved[qid+1] = selected
         st.markdown("---")
 
+    attempted = sum(1 for qid in order if saved.get(qid+1) is not None)
+    missed = 15 - attempted
+    st.info(f"Progress: **{attempted}/15 attempted** | **{missed} unanswered**")
     if st.button("Submit assessment", type="primary", use_container_width=True):
-        current = load_answers(pid)
-        missing = [str(i) for i in range(1, len(QUESTIONS)+1) if not current.get(i)]
-        if missing:
-            st.error(f"Please answer all questions. Missing: {', '.join(missing)}")
-        else:
-            responses = {str(i): current.get(i) for i in range(1, len(QUESTIONS)+1)}
-            score = sum(1 for i, q in enumerate(QUESTIONS) if responses[str(i+1)] == q["options"][q["a"]])
-            if save_submission(trainee_name, organisation, responses, score):
-                update_participant_status(pid, "Submitted")
-                log_event(pid, trainee_name, "Submitted", "Trainee submitted assessment")
-                st.session_state.submitted = True
+        st.session_state.confirm_submit = True
+    if st.session_state.get("confirm_submit", False):
+        st.warning(f"You have attempted {attempted} questions and missed {missed} questions. You can go back and answer them, or confirm submission.")
+        c1, c2 = st.columns(2)
+        with c1:
+            if st.button("Go back to questions", use_container_width=True):
+                st.session_state.confirm_submit = False
                 st.rerun()
+        with c2:
+            if st.button("Confirm final submission", type="primary", use_container_width=True):
+                current = load_answers(pid)
+                responses = {str(qid+1): current.get(qid+1) for qid in order}
+                score = sum(1 for qid in order if responses[str(qid+1)] == QUESTIONS[qid]["options"][QUESTIONS[qid]["a"]])
+                if save_submission(trainee_name, organisation, responses, score):
+                    update_participant_status(pid, "Submitted")
+                    log_event(pid, trainee_name, "Submitted",
+                              f"Test ID {control['test_id']}; attempted {attempted}; missed {missed}")
+                    st.session_state.submitted = True
+                    st.session_state.confirm_submit = False
+                    st.rerun()
+
 
 else:
     st.subheader("Administrator")
@@ -411,12 +529,13 @@ else:
     st.metric("Trainees joined", len(participants))
     if participants:
         roster = [{"Name": p[1], "Organisation": p[2], "Joined (UTC)": p[3], "Status": p[4],
-                   "Attempt started (UTC)": datetime.fromtimestamp(p[5], timezone.utc).isoformat() if p[5] else "Not started"}
+                   "Attempt started (UTC)": datetime.fromtimestamp(p[5], timezone.utc).isoformat() if p[5] else "Not started",
+                   "Test ID": get_test_control().get("test_id") or ""}
                   for p in participants]
         st.dataframe(roster, use_container_width=True, hide_index=True)
     else:
         st.info("No trainees have registered yet.")
-    st_autorefresh(interval=5000, key="admin_roster_refresh")
+    st_autorefresh(interval=2000, key="admin_roster_refresh")
     control = get_test_control()
 
     st.markdown("### Individual trainee control")
@@ -429,17 +548,28 @@ else:
         selected_row = next(p for p in participants if p[0] == selected_pid)
         st.write(f"**Selected trainee:** {selected_row[1]}")
         restart_minutes = st.number_input("Restart duration for this trainee (minutes)", min_value=1, max_value=180, value=int(selected_row[6] or 10), step=1, key="individual_restart_duration")
-        col1, col2 = st.columns(2)
+        col1, col2, col3 = st.columns(3)
         with col1:
-            if st.button("Restart selected trainee", type="primary", use_container_width=True):
+            if st.button("Restart this trainee", type="primary", use_container_width=True):
                 restart_participant(selected_pid, selected_row[1], int(restart_minutes))
-                st.success(f"Restarted the quiz for {selected_row[1]}. Previous answers for this attempt were cleared.")
+                st.success(f"Restarted {selected_row[1]}; their answers were cleared and question order reshuffled.")
                 st.rerun()
         with col2:
-            if st.button("Reset selected trainee to waiting", use_container_width=True):
+            if selected_row[4] == "Paused":
+                if st.button("Resume trainee", use_container_width=True):
+                    resume_participant(selected_pid, selected_row[1])
+                    st.rerun()
+            else:
+                if st.button("Pause trainee", use_container_width=True):
+                    pause_participant(selected_pid, selected_row[1])
+                    st.rerun()
+        with col3:
+            if st.button("Reset to waiting", use_container_width=True):
                 clear_answers(selected_pid)
                 conn = db_conn()
-                conn.execute("UPDATE participants SET status='Waiting', attempt_start_at=NULL, attempt_duration_minutes=NULL WHERE participant_id=?", (selected_pid,))
+                conn.execute("""UPDATE participants SET status='Waiting', attempt_start_at=NULL,
+                    attempt_duration_minutes=NULL, question_order_json=NULL, paused_remaining_seconds=NULL
+                    WHERE participant_id=?""", (selected_pid,))
                 conn.commit()
                 conn.close()
                 log_event(selected_pid, selected_row[1], "Reset to waiting", "Administrator reset the trainee attempt")
@@ -465,18 +595,17 @@ else:
     else:
         st.caption("No activity has been recorded yet.")
     st.markdown("### Assessment control")
-    st.write("Review the registered trainee list above before starting. The test starts for all waiting trainees when you press Start.")
+    st.write("Each test session receives a unique Test ID and a common random set of 15 questions selected from the 50-question bank.")
     duration = st.number_input("Test duration (minutes)", min_value=1, max_value=180, value=control["duration"], step=1)
     if st.button(f"Start test for {len(participants)} registered trainees", type="primary", use_container_width=True, disabled=(len(participants) == 0)):
-        set_test_control(True, datetime.now(timezone.utc).timestamp(), int(duration))
-        conn = db_conn()
-        conn.execute("UPDATE participants SET status='Waiting', attempt_start_at=NULL, attempt_duration_minutes=NULL")
-        conn.commit()
-        conn.close()
-        for participant in participants:
-            clear_answers(participant[0])
-            log_event(participant[0], participant[1], "New assessment session", "Administrator started a new group session")
-        st.success(f"Assessment started for all trainees. Duration: {int(duration)} minutes.")
+        new_test_id = begin_group_test(int(duration))
+        st.success(f"Assessment started. Test ID: {new_test_id} | 15 questions per trainee.")
+        st.rerun()
+    if control.get("test_id"):
+        st.info(f"Current Test ID: **{control['test_id']}**")
+    if control["active"] and st.button("Restart test for ALL trainees", use_container_width=True):
+        new_test_id = begin_group_test(int(duration))
+        st.success(f"All trainee attempts restarted under new Test ID: {new_test_id}")
         st.rerun()
     if st.button("End assessment now", use_container_width=True):
         set_test_control(False, None, int(duration))
@@ -516,12 +645,13 @@ else:
                     "Trainee Name": r[0],
                     "Organisation": r[1],
                     "Submitted At (UTC)": r[2],
-                    "Score": f"{r[3]}/{r[4]}"
+                    "Score": f"{r[3]}/{r[4]}",
+                    "Test ID": r[6] or ""
                 } for r in rows]
                 st.dataframe(display, use_container_width=True, hide_index=True)
                 output = io.StringIO()
                 writer = csv.writer(output)
-                writer.writerow(["Trainee Name", "Organisation", "Submitted At (UTC)", "Score", "Total", "Answers JSON"])
+                writer.writerow(["Trainee Name", "Organisation", "Submitted At (UTC)", "Score", "Total", "Answers JSON", "Test ID"])
                 writer.writerows(rows)
                 st.download_button("Download detailed results CSV", output.getvalue(), "dgit_assessment_results.csv", "text/csv")
             else:

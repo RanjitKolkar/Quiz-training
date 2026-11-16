@@ -1,69 +1,16 @@
-# DGIT Training MCQ Assessment (Streamlit)
+# DGIT Training Assessment App
 
 ## Features
-- 20 moderate, scenario-based MCQs based on the DGIT Batch 4 training timetable (12–16 October 2026).
-- Admin starts/restarts the assessment and sets the shared timer (default 10 minutes).
-- Countdown is visible to trainees and automatically submits their current answers when time expires.
-- Larger fonts, wider layout and clearer question cards.
-- Trainee must enter their full name; organisation/department is optional.
-- Score and answers are **not shown to trainees** after submission.
-- Admin-only results page with trainee name, organisation, timestamp, score and CSV export.
-- Results can be stored in SQLite for local testing or Google Sheets for persistent Streamlit Cloud storage.
+- 50-question application-oriented question bank; each test session randomly selects 15 questions.
+- Every trainee in one Test ID receives the same 15 questions, but in a separately shuffled order.
+- Skipped questions are permitted. Before final submission, the trainee is told how many questions were attempted and missed.
+- Auto-refresh for trainees and administrators; waiting trainees are automatically moved into the quiz when the test starts.
+- Refresh-safe saved answers and remaining time.
+- Administrator can restart all trainees under a new Test ID, restart an individual trainee, pause/resume an individual trainee, or reset an individual trainee to waiting.
+- Activity logs capture registration, test start, answer saves, submissions, pause/resume, restart/reset events.
 
-## Run locally
-1. Install Python 3.10 or later.
-2. Open a terminal in this folder.
-3. Run:
-   ```bash
-   pip install -r requirements.txt
-   streamlit run app.py
-   ```
-4. Open the local URL printed by Streamlit (usually http://localhost:8501).
+## Deployment
+Replace the repository's `app.py` and `requirements.txt` with the files in this ZIP. Preserve existing Streamlit Secrets.
 
-## Deploy on GitHub + Streamlit Community Cloud
-1. Create a GitHub repository and upload `app.py`, `requirements.txt`, and this README.
-2. In Streamlit Community Cloud, create an app from that repository and select `app.py`.
-3. Open the app's **Settings → Secrets** and add the configuration below.
-
-### Required admin password
-Set the administrator password (currently configured as requested):
-```toml
-ADMIN_PASSWORD = "Nitk@12345"
-```
-
-### Recommended: persistent Google Sheets storage
-SQLite is suitable for local testing, but files on Streamlit Community Cloud are not guaranteed to persist across restarts/redeployments. For durable hosted results, use a dedicated Google Sheet.
-
-1. Create a Google Cloud service account and enable the Google Sheets API.
-2. Create a Google Sheet for assessment results.
-3. Share the Sheet with the service-account email address as **Editor**.
-4. Copy the Sheet ID from its URL.
-5. Add the following to Streamlit **Secrets** (replace the example values with the service account JSON values):
-```toml
-ADMIN_PASSWORD = "Nitk@12345"
-GOOGLE_SHEET_ID = "your-google-sheet-id"
-
-[gcp_service_account]
-type = "service_account"
-project_id = "your-project-id"
-private_key_id = "your-private-key-id"
-private_key = "-----BEGIN PRIVATE KEY-----\nYOUR_PRIVATE_KEY\n-----END PRIVATE KEY-----\n"
-client_email = "your-service-account@your-project.iam.gserviceaccount.com"
-client_id = "your-client-id"
-token_uri = "https://oauth2.googleapis.com/token"
-```
-Use the complete service-account JSON fields supplied by Google. Keep these secrets in Streamlit's Secrets manager only. **Never commit credentials or private keys to GitHub.**
-
-When Google Sheets secrets are configured, submissions are written to the Sheet and the Admin page reads results from that Sheet. If Google Sheets is not configured, the app uses local SQLite for testing.
-
-## Important security notes
-- This is a basic training assessment app, not a high-assurance examination platform.
-- Admin password is checked server-side using Streamlit secrets; configure a strong password before publishing.
-- The app does not show the score to trainees. Admin can see score and detailed answer data.
-- Trainee name is collected as entered; consider your institution's privacy and retention policy before collecting personal data.
-
-
-## Waiting room
-Trainees register before the test starts and wait in a refreshable waiting room. Admin sees the live roster and count, then starts the test for all registered trainees. The countdown/status remains visible on the trainee page. The 20 questions have been rewritten to be shorter and more challenging.
-
-Streamlit Community Cloud local SQLite storage may be reset after restarts/redeployments. For repeated or high-stakes use, migrate the roster and timer-control tables to a shared persistent database.
+## Important persistence note
+This version uses SQLite. Streamlit Community Cloud local storage may be reset during restarts/redeployments, and local SQLite is not a safe shared store for multiple app replicas. For durable production use, migrate participant state, test sessions, answers, and logs to a shared PostgreSQL/Supabase database.
