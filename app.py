@@ -78,6 +78,20 @@ def db_conn():
         organisation TEXT, joined_at TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'Waiting'
     )""")
     conn.execute("INSERT OR IGNORE INTO assessment_control (id, is_active, start_at, duration_minutes) VALUES (1, 0, NULL, 10)")
+    conn.execute("""CREATE TABLE IF NOT EXISTS participant_answers (
+        participant_id TEXT NOT NULL, question_no INTEGER NOT NULL, answer TEXT,
+        updated_at TEXT NOT NULL, PRIMARY KEY (participant_id, question_no)
+    )""")
+    conn.execute("""CREATE TABLE IF NOT EXISTS activity_logs (
+        id INTEGER PRIMARY KEY AUTOINCREMENT, participant_id TEXT, trainee_name TEXT,
+        event TEXT NOT NULL, details TEXT, event_at TEXT NOT NULL
+    )""")
+    # Per-trainee timer fields; safe migration for existing SQLite databases.
+    columns = [r[1] for r in conn.execute("PRAGMA table_info(participants)").fetchall()]
+    if "attempt_start_at" not in columns:
+        conn.execute("ALTER TABLE participants ADD COLUMN attempt_start_at REAL")
+    if "attempt_duration_minutes" not in columns:
+        conn.execute("ALTER TABLE participants ADD COLUMN attempt_duration_minutes INTEGER")
     conn.commit()
     return conn
 
@@ -94,22 +108,101 @@ def set_test_control(active, start_at=None, duration=10):
     conn.commit()
     conn.close()
 
+def log_event(pid, name, event, details=""):
+    conn = db_conn()
+    conn.execute(
+        "INSERT INTO activity_logs (participant_id, trainee_name, event, details, event_at) VALUES (?, ?, ?, ?, ?)",
+        (pid, name, event, details, datetime.now(timezone.utc).isoformat())
+    )
+    conn.commit()
+    conn.close()
+
 def register_participant(pid, name, organisation):
     conn = db_conn()
-    conn.execute("INSERT OR REPLACE INTO participants VALUES (?, ?, ?, ?, ?)",
-                 (pid, name, organisation, datetime.now(timezone.utc).isoformat(), "Waiting"))
-    conn.commit(); conn.close()
+    # Enforce unique names case-insensitively, including extra spaces.
+    existing = conn.execute(
+        "SELECT participant_id FROM participants WHERE lower(trim(trainee_name))=lower(trim(?))",
+        (name,)
+    ).fetchone()
+    if existing:
+        conn.close()
+        return False
+    conn.execute(
+        "INSERT INTO participants (participant_id, trainee_name, organisation, joined_at, status) VALUES (?, ?, ?, ?, 'Waiting')",
+        (pid, name, organisation, datetime.now(timezone.utc).isoformat())
+    )
+    conn.commit()
+    conn.close()
+    log_event(pid, name, "Registered", "Entered waiting room")
+    return True
 
 def list_participants():
     conn = db_conn()
-    rows = conn.execute("SELECT participant_id, trainee_name, organisation, joined_at, status FROM participants ORDER BY joined_at").fetchall()
+    rows = conn.execute("""SELECT participant_id, trainee_name, organisation, joined_at, status,
+        attempt_start_at, attempt_duration_minutes FROM participants ORDER BY joined_at""").fetchall()
     conn.close()
     return rows
+
+def get_participant(pid):
+    if not pid:
+        return None
+    conn = db_conn()
+    row = conn.execute("""SELECT participant_id, trainee_name, organisation, joined_at, status,
+        attempt_start_at, attempt_duration_minutes FROM participants WHERE participant_id=?""", (pid,)).fetchone()
+    conn.close()
+    return row
+
+def find_participant_by_name(name):
+    conn = db_conn()
+    row = conn.execute("SELECT participant_id FROM participants WHERE lower(trim(trainee_name))=lower(trim(?))", (name,)).fetchone()
+    conn.close()
+    return row[0] if row else None
 
 def update_participant_status(pid, status):
     conn = db_conn()
     conn.execute("UPDATE participants SET status=? WHERE participant_id=?", (status, pid))
-    conn.commit(); conn.close()
+    conn.commit()
+    conn.close()
+
+def save_answer(pid, name, question_no, answer):
+    conn = db_conn()
+    conn.execute("""INSERT INTO participant_answers (participant_id, question_no, answer, updated_at)
+        VALUES (?, ?, ?, ?) ON CONFLICT(participant_id, question_no)
+        DO UPDATE SET answer=excluded.answer, updated_at=excluded.updated_at""",
+        (pid, int(question_no), answer, datetime.now(timezone.utc).isoformat()))
+    conn.commit()
+    conn.close()
+    log_event(pid, name, "Answer saved", f"Question {question_no}")
+
+def load_answers(pid):
+    conn = db_conn()
+    rows = conn.execute("SELECT question_no, answer FROM participant_answers WHERE participant_id=?", (pid,)).fetchall()
+    conn.close()
+    return {int(n): ans for n, ans in rows}
+
+def clear_answers(pid):
+    conn = db_conn()
+    conn.execute("DELETE FROM participant_answers WHERE participant_id=?", (pid,))
+    conn.commit()
+    conn.close()
+
+def load_logs(pid=None):
+    conn = db_conn()
+    if pid:
+        rows = conn.execute("SELECT trainee_name, event, details, event_at FROM activity_logs WHERE participant_id=? ORDER BY id DESC", (pid,)).fetchall()
+    else:
+        rows = conn.execute("SELECT trainee_name, event, details, event_at FROM activity_logs ORDER BY id DESC").fetchall()
+    conn.close()
+    return rows
+
+def restart_participant(pid, name, duration):
+    clear_answers(pid)
+    conn = db_conn()
+    conn.execute("""UPDATE participants SET status='Started', attempt_start_at=?, attempt_duration_minutes=?
+        WHERE participant_id=?""", (datetime.now(timezone.utc).timestamp(), int(duration), pid))
+    conn.commit()
+    conn.close()
+    log_event(pid, name, "Attempt restarted by admin", f"New duration: {duration} minutes")
 
 def save_local(name, organisation, answers, score):
     conn = db_conn()
@@ -181,82 +274,119 @@ if "trainee_name" not in st.session_state:
 page = st.sidebar.radio("Navigation", ["Trainee Assessment", "Admin"])
 
 if page == "Trainee Assessment":
+    token = st.query_params.get("participant")
+    if token and not st.session_state.get("registered", False):
+        restored = get_participant(token)
+        if restored:
+            st.session_state.participant_id = restored[0]
+            st.session_state.trainee_name = restored[1]
+            st.session_state.organisation = restored[2] or ""
+            st.session_state.registered = True
+
     control = get_test_control()
-    now_ts = datetime.now(timezone.utc).timestamp()
-    deadline = control["start_at"] + control["duration"] * 60 if control["start_at"] else None
-    remaining = max(0, int(deadline - now_ts)) if deadline else 0
-
-    if control["active"] and deadline:
-        mm, ss = divmod(remaining, 60)
-        timer_label = f"TIME REMAINING  {mm:02d}:{ss:02d}" if remaining else "TIME IS UP"
-        st.markdown(f'<div class="timer">{timer_label}</div>', unsafe_allow_html=True)
-    else:
-        st.markdown('<div class="timer">TEST NOT STARTED — WAITING FOR ADMIN</div>', unsafe_allow_html=True)
-
-    if st.session_state.submitted:
-        st.success("Your assessment has been submitted. Thank you.")
-        st.stop()
-
     if not st.session_state.get("registered", False):
+        st.markdown('<div class="timer">TEST NOT STARTED — WAITING FOR ADMIN</div>', unsafe_allow_html=True)
         with st.form("trainee_registration"):
             st.subheader("Trainee registration")
             name = st.text_input("Full name *", max_chars=100)
             organisation = st.text_input("Organisation / Department", max_chars=150)
             joined = st.form_submit_button("Register and enter waiting room", type="primary", use_container_width=True)
         if joined:
-            if not name.strip():
+            clean_name = " ".join(name.split())
+            if not clean_name:
                 st.error("Please enter your full name.")
-                st.stop()
-            pid = str(uuid.uuid4())
-            st.session_state.participant_id = pid
-            st.session_state.trainee_name = name.strip()
-            st.session_state.organisation = organisation.strip()
-            st.session_state.registered = True
-            register_participant(pid, name.strip(), organisation.strip())
-            st.rerun()
-        st_autorefresh(interval=5000, key="registration_refresh")
+            elif find_participant_by_name(clean_name):
+                st.error("This name is already registered. Please use the existing session or contact the administrator.")
+            else:
+                pid = str(uuid.uuid4())
+                if register_participant(pid, clean_name, organisation.strip()):
+                    st.session_state.update({"participant_id": pid, "trainee_name": clean_name,
+                                             "organisation": organisation.strip(), "registered": True})
+                    st.query_params["participant"] = pid
+                    st.rerun()
+                else:
+                    st.error("This name is already registered.")
+        st_autorefresh(interval=2500, key="registration_refresh")
         st.stop()
 
-    if not control["active"]:
-        st.success(f"Registered: {st.session_state.trainee_name}")
-        st.info("You are in the waiting room. The administrator will start the test for everyone.")
-        st_autorefresh(interval=3000, key="waiting_room_refresh")
+    pid = st.session_state.participant_id
+    p = get_participant(pid)
+    if not p:
+        st.error("Your saved session was not found. Contact the administrator.")
+        st.stop()
+    trainee_name, organisation = p[1], p[2] or ""
+    st.markdown(f"### Trainee: **{trainee_name}**")
+    st.caption(f"Organisation: {organisation or 'Not provided'}")
+
+    if p[4].startswith("Submitted"):
+        st.session_state.submitted = True
+    if st.session_state.submitted:
+        st.success("Your assessment has been submitted. Your responses are recorded.")
         st.stop()
 
-    if not st.session_state.get("started", False):
-        if remaining <= 0:
-            st.warning("The test has ended. Contact the administrator.")
-            st.stop()
-        st.session_state.started = True
-        update_participant_status(st.session_state.participant_id, "Started")
-        st.rerun()
+    # Start each registered trainee automatically when admin activates the assessment.
+    if control["active"] and not p[5]:
+        conn = db_conn()
+        conn.execute("UPDATE participants SET attempt_start_at=?, attempt_duration_minutes=? WHERE participant_id=? AND attempt_start_at IS NULL",
+                     (control["start_at"], control["duration"], pid))
+        conn.commit()
+        conn.close()
+        log_event(pid, trainee_name, "Test started automatically", "Administrator activated the assessment")
+        p = get_participant(pid)
 
-    st_autorefresh(interval=1000, key="assessment_timer_refresh")
+    if not p[5]:
+        st.markdown('<div class="timer">TEST NOT STARTED — WAITING FOR ADMIN</div>', unsafe_allow_html=True)
+        st.info("Waiting room is active. This page refreshes automatically; the quiz will open as soon as the administrator starts it.")
+        st_autorefresh(interval=1500, key="waiting_room_refresh")
+        st.stop()
+
+    start_at = float(p[5])
+    duration = int(p[6] or control["duration"])
+    remaining = max(0, int(start_at + duration * 60 - datetime.now(timezone.utc).timestamp()))
+    mm, ss = divmod(remaining, 60)
+    st.markdown(f'<div class="timer">TIME REMAINING  {mm:02d}:{ss:02d}</div>', unsafe_allow_html=True)
+    if p[4] == "Waiting":
+        update_participant_status(pid, "Started")
+
     if remaining <= 0:
-        responses = {str(i+1): st.session_state.get(f"q_{i+1}") for i in range(len(QUESTIONS))}
+        st.warning("Time is over. Your saved answers are being submitted.")
+        saved = load_answers(pid)
+        responses = {str(i+1): saved.get(i+1) for i in range(len(QUESTIONS))}
         score = sum(1 for i, q in enumerate(QUESTIONS) if responses[str(i+1)] == q["options"][q["a"]])
-        if save_submission(st.session_state.trainee_name, st.session_state.get("organisation", ""), responses, score):
-            update_participant_status(st.session_state.participant_id, "Submitted (time expired)")
+        if save_submission(trainee_name, organisation, responses, score):
+            update_participant_status(pid, "Submitted (time expired)")
+            log_event(pid, trainee_name, "Auto-submitted", "Timer expired")
             st.session_state.submitted = True
             st.rerun()
         st.stop()
 
-    st.markdown(f"### Assessment: {st.session_state.trainee_name}")
-    with st.form("assessment_form"):
-        responses = {}
-        for i, q in enumerate(QUESTIONS):
-            st.markdown(f'<div class="question-card"><strong>Q{i+1}.</strong> {q["q"]}</div>', unsafe_allow_html=True)
-            responses[str(i+1)] = st.radio("Choose one", q["options"], index=None, key=f"q_{i+1}", label_visibility="collapsed")
-            st.markdown("---")
-        submitted = st.form_submit_button("Submit assessment", type="primary", use_container_width=True)
-    if submitted:
-        unanswered = [str(i+1) for i, q in enumerate(QUESTIONS) if responses[str(i+1)] is None]
-        if unanswered:
-            st.error(f"Answer all questions before submitting. Missing: {', '.join(unanswered)}")
+    st_autorefresh(interval=1000, key="quiz_timer_refresh")
+    st.caption("Answers are saved automatically. Refreshing or reopening this page restores your answers and remaining time.")
+    saved = load_answers(pid)
+    for i, q in enumerate(QUESTIONS):
+        qno = i + 1
+        key = f"q_{qno}"
+        if key not in st.session_state:
+            st.session_state[key] = saved.get(qno)
+        st.markdown(f'<div class="question-card"><strong>Q{qno}.</strong> {q["q"]}</div>', unsafe_allow_html=True)
+        st.radio("Choose one", q["options"], index=None, key=key, label_visibility="collapsed")
+        selected = st.session_state.get(key)
+        if selected is not None and selected != saved.get(qno):
+            save_answer(pid, trainee_name, qno, selected)
+            saved[qno] = selected
+        st.markdown("---")
+
+    if st.button("Submit assessment", type="primary", use_container_width=True):
+        current = load_answers(pid)
+        missing = [str(i) for i in range(1, len(QUESTIONS)+1) if not current.get(i)]
+        if missing:
+            st.error(f"Please answer all questions. Missing: {', '.join(missing)}")
         else:
+            responses = {str(i): current.get(i) for i in range(1, len(QUESTIONS)+1)}
             score = sum(1 for i, q in enumerate(QUESTIONS) if responses[str(i+1)] == q["options"][q["a"]])
-            if save_submission(st.session_state.trainee_name, st.session_state.get("organisation", ""), responses, score):
-                update_participant_status(st.session_state.participant_id, "Submitted")
+            if save_submission(trainee_name, organisation, responses, score):
+                update_participant_status(pid, "Submitted")
+                log_event(pid, trainee_name, "Submitted", "Trainee submitted assessment")
                 st.session_state.submitted = True
                 st.rerun()
 
@@ -280,17 +410,72 @@ else:
     participants = list_participants()
     st.metric("Trainees joined", len(participants))
     if participants:
-        roster = [{"Name": p[1], "Organisation": p[2], "Joined (UTC)": p[3], "Status": p[4]} for p in participants]
+        roster = [{"Name": p[1], "Organisation": p[2], "Joined (UTC)": p[3], "Status": p[4],
+                   "Attempt started (UTC)": datetime.fromtimestamp(p[5], timezone.utc).isoformat() if p[5] else "Not started"}
+                  for p in participants]
         st.dataframe(roster, use_container_width=True, hide_index=True)
     else:
         st.info("No trainees have registered yet.")
     st_autorefresh(interval=5000, key="admin_roster_refresh")
     control = get_test_control()
+
+    st.markdown("### Individual trainee control")
+    if participants:
+        selected_pid = st.selectbox(
+            "Select trainee",
+            options=[p[0] for p in participants],
+            format_func=lambda value: next((f"{p[1]} — {p[4]}" for p in participants if p[0] == value), value)
+        )
+        selected_row = next(p for p in participants if p[0] == selected_pid)
+        st.write(f"**Selected trainee:** {selected_row[1]}")
+        restart_minutes = st.number_input("Restart duration for this trainee (minutes)", min_value=1, max_value=180, value=int(selected_row[6] or 10), step=1, key="individual_restart_duration")
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("Restart selected trainee", type="primary", use_container_width=True):
+                restart_participant(selected_pid, selected_row[1], int(restart_minutes))
+                st.success(f"Restarted the quiz for {selected_row[1]}. Previous answers for this attempt were cleared.")
+                st.rerun()
+        with col2:
+            if st.button("Reset selected trainee to waiting", use_container_width=True):
+                clear_answers(selected_pid)
+                conn = db_conn()
+                conn.execute("UPDATE participants SET status='Waiting', attempt_start_at=NULL, attempt_duration_minutes=NULL WHERE participant_id=?", (selected_pid,))
+                conn.commit()
+                conn.close()
+                log_event(selected_pid, selected_row[1], "Reset to waiting", "Administrator reset the trainee attempt")
+                st.rerun()
+        st.markdown("**Selected trainee activity log**")
+        user_logs = load_logs(selected_pid)
+        if user_logs:
+            st.dataframe([{"Name":r[0],"Event":r[1],"Details":r[2],"Time (UTC)":r[3]} for r in user_logs], use_container_width=True, hide_index=True)
+        else:
+            st.caption("No activity recorded yet.")
+    else:
+        st.info("Individual controls will appear after trainees register.")
+
+    st.markdown("### Complete activity log")
+    all_logs = load_logs()
+    if all_logs:
+        st.dataframe([{"Name":r[0],"Event":r[1],"Details":r[2],"Time (UTC)":r[3]} for r in all_logs], use_container_width=True, hide_index=True)
+        log_csv = io.StringIO()
+        log_writer = csv.writer(log_csv)
+        log_writer.writerow(["Trainee Name", "Event", "Details", "Time (UTC)"])
+        log_writer.writerows(all_logs)
+        st.download_button("Download activity log CSV", log_csv.getvalue(), "dgit_activity_logs.csv", "text/csv")
+    else:
+        st.caption("No activity has been recorded yet.")
     st.markdown("### Assessment control")
     st.write("Review the registered trainee list above before starting. The test starts for all waiting trainees when you press Start.")
     duration = st.number_input("Test duration (minutes)", min_value=1, max_value=180, value=control["duration"], step=1)
     if st.button(f"Start test for {len(participants)} registered trainees", type="primary", use_container_width=True, disabled=(len(participants) == 0)):
         set_test_control(True, datetime.now(timezone.utc).timestamp(), int(duration))
+        conn = db_conn()
+        conn.execute("UPDATE participants SET status='Waiting', attempt_start_at=NULL, attempt_duration_minutes=NULL")
+        conn.commit()
+        conn.close()
+        for participant in participants:
+            clear_answers(participant[0])
+            log_event(participant[0], participant[1], "New assessment session", "Administrator started a new group session")
         st.success(f"Assessment started for all trainees. Duration: {int(duration)} minutes.")
         st.rerun()
     if st.button("End assessment now", use_container_width=True):
