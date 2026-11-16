@@ -61,3 +61,9 @@ When Google Sheets secrets are configured, submissions are written to the Sheet 
 - Admin password is checked server-side using Streamlit secrets; configure a strong password before publishing.
 - The app does not show the score to trainees. Admin can see score and detailed answer data.
 - Trainee name is collected as entered; consider your institution's privacy and retention policy before collecting personal data.
+
+
+## Waiting room
+Trainees register before the test starts and wait in a refreshable waiting room. Admin sees the live roster and count, then starts the test for all registered trainees. The countdown/status remains visible on the trainee page. The 20 questions have been rewritten to be shorter and more challenging.
+
+Streamlit Community Cloud local SQLite storage may be reset after restarts/redeployments. For repeated or high-stakes use, migrate the roster and timer-control tables to a shared persistent database.

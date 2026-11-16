@@ -6,6 +6,7 @@ import hashlib
 import hmac
 import csv
 import io
+import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -33,246 +34,26 @@ div[data-testid="stAlert"] { font-size: 1.05rem !important; }
 """, unsafe_allow_html=True)
 
 QUESTIONS = [
-    {
-        "topic": "Introduction to Digital Forensics",
-        "q": "During an investigation, an officer receives a laptop that may contain evidence of undisclosed financial activity. Which approach best reflects digital-forensic practice?",
-        "options": [
-            "Browse files directly and copy only documents that look relevant",
-            "Preserve the device, document handling, acquire data using a suitable forensic process, and verify integrity",
-            "Start the operating system and allow normal updates before collecting data",
-            "Rename suspicious files so they can be identified easily"
-        ],
-        "a": 1,
-        "why": "A defensible process preserves the source, documents handling, uses an appropriate acquisition method, and checks integrity."
-    },
-    {
-        "topic": "Search, Seizure & Investigation Techniques",
-        "q": "At a search location, an officer takes custody of several digital devices. Which record is most important to maintain traceability from seizure through examination?",
-        "options": [
-            "A list of device brands only",
-            "A note of the officer's first impression",
-            "A documented seizure/acquisition record with identifiers, date, time, condition and handling details",
-            "A screenshot of the desktop wallpaper"
-        ],
-        "a": 2,
-        "why": "Documented seizure and acquisition details support traceability and accountability for each item."
-    },
-    {
-        "topic": "Financial & Accounting Forensics",
-        "q": "A business reports low income, but bank statements show repeated transfers between related accounts. What should an investigator do first?",
-        "options": [
-            "Map the transactions, counterparties, dates and amounts to identify financial trails",
-            "Assume every transfer is tax evasion",
-            "Delete duplicate-looking entries from the working copy",
-            "Examine only the closing balance"
-        ],
-        "a": 0,
-        "why": "Transaction mapping helps reveal relationships and patterns while avoiding premature conclusions."
-    },
-    {
-        "topic": "Financial & Accounting Forensics",
-        "q": "An investigator needs to examine accounting entries and compare them with supporting records. Which source/tool was specifically included in the training schedule?",
-        "options": [
-            "Tally and financial/accounting tools",
-            "A packet-sniffing tool only",
-            "A disk defragmenter",
-            "A video transcoder"
-        ],
-        "a": 0,
-        "why": "The financial-forensics sessions included Tally and financial/accounting tools."
-    },
-    {
-        "topic": "Blockchain Investigations",
-        "q": "An address on a public blockchain is suspected of receiving proceeds from a transaction. Which statement is the most appropriate starting point?",
-        "options": [
-            "The address automatically reveals the legal identity of its controller",
-            "Public transaction records can help trace flows, but attribution requires additional evidence",
-            "Blockchain transactions can always be reversed by the investigator",
-            "A wallet address is the same thing as a bank account number"
-        ],
-        "a": 1,
-        "why": "Blockchain records can support transaction tracing, but an address alone does not establish the real-world identity of its controller."
-    },
-    {
-        "topic": "Cryptocurrency Seizure",
-        "q": "During a cryptocurrency investigation, officers identify a wallet application on a seized phone. What is the best investigative interpretation?",
-        "options": [
-            "The application alone proves the phone owner controlled every associated asset",
-            "The application is irrelevant if no cash is found",
-            "The application may provide leads; wallet access, ownership and transaction links need corroboration",
-            "The wallet should be opened and funds transferred immediately"
-        ],
-        "a": 2,
-        "why": "Wallet applications can provide leads, but control and ownership must be established through corroborating evidence and proper procedures."
-    },
-    {
-        "topic": "Investigative Data Analytics (Money Trailing)",
-        "q": "A spreadsheet contains thousands of payments. The objective is to identify possible layering across accounts. Which analytical step is most useful?",
-        "options": [
-            "Sort only by beneficiary name and ignore dates",
-            "Remove small transactions before analysis",
-            "Review only transactions made on weekends",
-            "Normalize transaction fields and analyse sequences, timing, amounts and linked accounts"
-        ],
-        "a": 3,
-        "why": "Consistent fields and relationship analysis help identify transaction chains and patterns across accounts."
-    },
-    {
-        "topic": "Network Forensics",
-        "q": "A company server is suspected of communicating with an external system during the period under investigation. Which evidence is most directly relevant to network forensics?",
-        "options": [
-            "Network traffic records, connection metadata and relevant server/network logs",
-            "The colour of the server rack",
-            "The printed organisational chart alone",
-            "The laptop screen resolution"
-        ],
-        "a": 0,
-        "why": "Network forensics examines communications and related network/server records."
-    },
-    {
-        "topic": "Dark Web Investigation using OSINT",
-        "q": "An investigator is explaining the difference between the Surface Web, Deep Web and Dark Web to a team. Which description is the most accurate?",
-        "options": [
-            "All three terms refer to the same set of publicly indexed websites",
-            "The Dark Web is a subset of the Deep Web that typically requires specific software or configurations to access",
-            "The Deep Web contains only illegal marketplaces",
-            "The Surface Web cannot be accessed using ordinary browsers"
-        ],
-        "a": 1,
-        "why": "The Dark Web is generally described as a portion of the Deep Web accessed through specialised tools or configurations; the Deep Web is not limited to illegal content."
-    },
-    {
-        "topic": "Open-Source Intelligence",
-        "q": "An officer is asked to gather publicly available information about a company and its associated online presence. Which action best fits OSINT?",
-        "options": [
-            "Attempt to access private accounts using guessed passwords",
-            "Install monitoring software on an employee's device without authority",
-            "Collect and document relevant information from lawful, publicly accessible sources",
-            "Treat an anonymous online post as verified fact"
-        ],
-        "a": 2,
-        "why": "OSINT involves collecting and analysing information from open sources, with careful documentation and validation."
-    },
-    {
-        "topic": "AI in Investigations",
-        "q": "An investigation team has millions of records and wants to prioritise material for human review. What is an appropriate role for AI-assisted analytics?",
-        "options": [
-            "Replace evidence preservation and chain-of-custody procedures",
-            "Automatically declare a person guilty based on a model score",
-            "Alter source records to make patterns easier to detect",
-            "Help reduce the search space and identify material for investigator verification"
-        ],
-        "a": 3,
-        "why": "AI can help prioritise and analyse large datasets, but findings require human review and evidential validation."
-    },
-    {
-        "topic": "Hands-on Digital Evidence Analysis",
-        "q": "During a practical exercise, a trainee is asked to analyse a digital image and prepare findings. Which output is most useful for a defensible examination?",
-        "options": [
-            "A report describing the method, relevant observations, tools and limitations",
-            "A verbal statement that the image looked suspicious",
-            "A cropped image without retaining the source",
-            "A conclusion without recording how it was reached"
-        ],
-        "a": 0,
-        "why": "A useful forensic report records the process, observations, tools and limitations so the work can be reviewed."
-    },
-    {
-        "topic": "Blockchain Wallet Tracing",
-        "q": "Investigators observe funds moving through several blockchain addresses. Which method best supports a fund-flow analysis?",
-        "options": [
-            "Assume every address belongs to one person",
-            "Record transaction identifiers, timestamps, amounts and address relationships, then seek attribution evidence",
-            "Ignore intermediary addresses",
-            "Use wallet balance alone to infer the full transaction history"
-        ],
-        "a": 1,
-        "why": "A transaction-level flow map preserves the observable trail while keeping attribution as a separate evidential question."
-    },
-    {
-        "topic": "Mobile Device Forensics",
-        "q": "A seized Android phone may contain relevant images and messages. Which approach is most appropriate before drawing conclusions from the extracted data?",
-        "options": [
-            "Use the phone normally for a few days to see what appears",
-            "Delete irrelevant-looking applications",
-            "Document the device and acquisition process, examine the acquired data, and correlate findings",
-            "Rely only on the gallery thumbnails"
-        ],
-        "a": 2,
-        "why": "Proper documentation, suitable acquisition and correlation of extracted artefacts support reliable mobile examination."
-    },
-    {
-        "topic": "Cloud Forensics",
-        "q": "An investigation concerns files believed to be stored in a cloud service. What is a key first consideration?",
-        "options": [
-            "Assume the local computer contains every cloud record",
-            "Ask the provider to delete duplicate data",
-            "Use another person's credentials to access the account",
-            "Identify the service, relevant account/data, available logs and lawful process for obtaining evidence"
-        ],
-        "a": 3,
-        "why": "Cloud investigations require identifying where data and logs reside and following the appropriate lawful acquisition process."
-    },
-    {
-        "topic": "Practical Investigation Techniques",
-        "q": "Why is a write blocker used when acquiring data from a storage device?",
-        "options": [
-            "To prevent writes to the source media during the acquisition process",
-            "To increase the storage capacity of the device",
-            "To decrypt every file automatically",
-            "To remove malware before imaging"
-        ],
-        "a": 0,
-        "why": "A write blocker helps protect the source media from modification during forensic acquisition."
-    },
-    {
-        "topic": "Windows and System Forensics",
-        "q": "A computer may have been used to access files and run applications. Which combination is most relevant to a Windows/system forensic examination?",
-        "options": [
-            "Monitor brightness and desktop wallpaper",
-            "Registry information, Windows artefacts and memory-related evidence",
-            "Printer colour settings only",
-            "The physical dimensions of the keyboard"
-        ],
-        "a": 1,
-        "why": "Registry data, operating-system artefacts and memory can provide information about system activity."
-    },
-    {
-        "topic": "Multimedia Forensics",
-        "q": "A video submitted as evidence is suspected to have been edited. Which examination is most relevant?",
-        "options": [
-            "Check only the file name",
-            "Convert it to a smaller format and discard the original",
-            "Examine the media, metadata and relevant image/video characteristics while preserving the original",
-            "Assume that a high-resolution video is authentic"
-        ],
-        "a": 2,
-        "why": "Multimedia forensics examines media content and metadata, while preservation of the original is essential."
-    },
-    {
-        "topic": "Digital Evidence Analysis",
-        "q": "An investigator finds an IP address in a set of extracted records. What is the most defensible interpretation?",
-        "options": [
-            "It conclusively identifies the individual user",
-            "It proves the device was physically present at a particular location",
-            "It is sufficient by itself to establish criminal intent",
-            "It is an investigative lead that should be correlated with timestamps, logs, provider records and other evidence"
-        ],
-        "a": 3,
-        "why": "An IP address is a technical identifier and must be interpreted with timing, network context and corroborating evidence."
-    },
-    {
-        "topic": "Evidence Integrity",
-        "q": "A forensic image is acquired and a cryptographic hash is calculated. The same hash is obtained when the image is verified later. What does this support?",
-        "options": [
-            "The image contains no deleted data",
-            "The image has remained unchanged between the two hash calculations, subject to the hash algorithm's properties",
-            "The source device was never used",
-            "Every file in the image is relevant to the case"
-        ],
-        "a": 1,
-        "why": "Matching hashes support that the hashed data has not changed between the two calculations; they do not prove relevance or completeness."
-    },
+{"topic":"Digital Forensics","q":"A live PC may hold volatile evidence. First priority?","options":["Power off","Capture volatile data","Run cleanup","Copy user files"],"a":1,"why":"Volatile data may be lost on shutdown; capture it first using a documented process."},
+{"topic":"Search and Seizure","q":"Best record for exhibit continuity?","options":["Make only","Seizure and handling log","Room photo","Officer memory"],"a":1,"why":"Identifiers, condition, timestamps and transfers establish continuity."},
+{"topic":"Financial Forensics","q":"Funds pass through accounts within minutes. Best analysis?","options":["Map linked flows and times","Treat transfers alone","Ignore intermediaries","Infer intent"],"a":0,"why":"A time-ordered transaction graph can expose layering patterns."},
+{"topic":"Accounting Forensics","q":"Ledger and bank credits differ. Best comparison?","options":["Tax rate","Staff list","Entry-to-transaction reconciliation","Closing balance"],"a":2,"why":"Transaction-level matching links ledger entries to bank movement."},
+{"topic":"Blockchain","q":"A forum post links an address to a suspect. What is missing?","options":["Block height","Wallet balance","Fee value","Independent attribution"],"a":3,"why":"On-chain activity alone does not identify the real-world controller."},
+{"topic":"Crypto Investigation","q":"A seed phrase is found near a phone. It proves:","options":["Ownership","Nothing without corroboration","A transfer","Current access"],"a":1,"why":"Context, wallet access and corroboration are needed to establish control."},
+{"topic":"Money Trailing","q":"Best feature to detect pass-through payments?","options":["Account age","Branch address","Timed debit-credit links","Monthly balance"],"a":2,"why":"Temporal and relational analysis reveals rapid movement across accounts."},
+{"topic":"Network Forensics","q":"Firewall logs show outbound traffic. What should be correlated?","options":["Time, NAT, endpoint and host logs","Malware assumption","IP geolocation only","Ignore clock drift"],"a":0,"why":"Correlated logs and time context help attribute traffic to a host."},
+{"topic":"Dark Web OSINT","q":"Browser history shows a hidden-service URL. This proves:","options":["Illegal purchase","Operator identity","Access lead only","Downloaded content"],"a":2,"why":"History may indicate access, not purpose, user identity or completed activity."},
+{"topic":"OSINT","q":"Two public profiles share a name and photo. Best next step?","options":["Assume same person","Correlate independent identifiers","Trust follower count","Publish match"],"a":1,"why":"Identity resolution needs multiple independent corroborating attributes."},
+{"topic":"AI Investigations","q":"AI flags 200 of 1M records. Best use?","options":["Treat as proof","Discard others","Prioritise human review","Submit model output"],"a":2,"why":"AI supports triage; investigators must validate source evidence."},
+{"topic":"Evidence Analysis","q":"A tool reports a deleted file. What must be retained?","options":["Screenshot only","Tool name","Edited copy","Image, logs and method"],"a":3,"why":"Preserved source data and documented methods support reproducibility."},
+{"topic":"Wallet Tracing","q":"Funds reach an exchange after several hops. Strongest lead?","options":["Exchange account records","Address label","Wallet icon","Current balance"],"a":0,"why":"Exchange records may connect on-chain flows to an account, subject to lawful process."},
+{"topic":"Mobile Forensics","q":"Why examine a SQLite WAL file?","options":["It stores images","It may hold uncheckpointed changes","It proves authorship","It replaces DB"],"a":1,"why":"A write-ahead log may contain recent changes not yet merged into the main database."},
+{"topic":"Cloud Forensics","q":"A synced folder lacks a deleted cloud file. Best next source?","options":["Other PC recycle bin","Bookmarks","Provider audit/version logs","Wallpaper"],"a":2,"why":"Cloud-side audit, version and deletion records may retain relevant activity."},
+{"topic":"Acquisition","q":"Matching source and image hashes support:","options":["Relevance","No deletion","Suspect authorship","Integrity of hashed data"],"a":3,"why":"Matching hashes support integrity, not completeness or relevance."},
+{"topic":"Windows Forensics","q":"Which artefact may show USB connection history?","options":["USB Registry entries","Wallpaper cache","Recycle Bin icon","Screen size"],"a":0,"why":"Windows Registry artefacts can record connected USB device details."},
+{"topic":"Multimedia","q":"Video metadata shows a creation time. Key caveat?","options":["Cannot be edited","May be altered; corroborate","Proves location","Proves continuity"],"a":1,"why":"Metadata can be modified and should be checked against independent evidence."},
+{"topic":"IP Analysis","q":"CGNAT maps many users to one public IP. What is essential?","options":["Country lookup","Domain only","Timestamp, source port and provider logs","Reverse DNS"],"a":2,"why":"Precise time and port details are needed to correlate provider records."},
+{"topic":"Evidence Integrity","q":"A forensic image hash mismatches. First action?","options":["Ignore","Edit hash","Delete source","Preserve logs and investigate"],"a":3,"why":"Stop and investigate the discrepancy; never conceal or overwrite evidence."}
 ]
 
 def db_conn():
@@ -292,6 +73,10 @@ def db_conn():
         start_at REAL,
         duration_minutes INTEGER NOT NULL DEFAULT 10
     )""")
+    conn.execute("""CREATE TABLE IF NOT EXISTS participants (
+        participant_id TEXT PRIMARY KEY, trainee_name TEXT NOT NULL,
+        organisation TEXT, joined_at TEXT NOT NULL, status TEXT NOT NULL DEFAULT 'Waiting'
+    )""")
     conn.execute("INSERT OR IGNORE INTO assessment_control (id, is_active, start_at, duration_minutes) VALUES (1, 0, NULL, 10)")
     conn.commit()
     return conn
@@ -308,6 +93,23 @@ def set_test_control(active, start_at=None, duration=10):
                  (1 if active else 0, start_at, int(duration)))
     conn.commit()
     conn.close()
+
+def register_participant(pid, name, organisation):
+    conn = db_conn()
+    conn.execute("INSERT OR REPLACE INTO participants VALUES (?, ?, ?, ?, ?)",
+                 (pid, name, organisation, datetime.now(timezone.utc).isoformat(), "Waiting"))
+    conn.commit(); conn.close()
+
+def list_participants():
+    conn = db_conn()
+    rows = conn.execute("SELECT participant_id, trainee_name, organisation, joined_at, status FROM participants ORDER BY joined_at").fetchall()
+    conn.close()
+    return rows
+
+def update_participant_status(pid, status):
+    conn = db_conn()
+    conn.execute("UPDATE participants SET status=? WHERE participant_id=?", (status, pid))
+    conn.commit(); conn.close()
 
 def save_local(name, organisation, answers, score):
     conn = db_conn()
@@ -381,76 +183,80 @@ page = st.sidebar.radio("Navigation", ["Trainee Assessment", "Admin"])
 if page == "Trainee Assessment":
     control = get_test_control()
     now_ts = datetime.now(timezone.utc).timestamp()
-    deadline = (control["start_at"] + control["duration"] * 60) if control["start_at"] else None
+    deadline = control["start_at"] + control["duration"] * 60 if control["start_at"] else None
     remaining = max(0, int(deadline - now_ts)) if deadline else 0
 
+    if control["active"] and deadline:
+        mm, ss = divmod(remaining, 60)
+        timer_label = f"TIME REMAINING  {mm:02d}:{ss:02d}" if remaining else "TIME IS UP"
+        st.markdown(f'<div class="timer">{timer_label}</div>', unsafe_allow_html=True)
+    else:
+        st.markdown('<div class="timer">TEST NOT STARTED — WAITING FOR ADMIN</div>', unsafe_allow_html=True)
+
     if st.session_state.submitted:
-        st.success("Your assessment has been submitted successfully.")
-        st.write("Thank you for completing the assessment. Your response has been recorded.")
+        st.success("Your assessment has been submitted. Thank you.")
         st.stop()
 
-    if not control["active"] or not control["start_at"]:
-        st.warning("The administrator has not started the assessment yet. Please wait for the invigilator's instruction.")
-        st.info("Once the administrator starts the test, you can enter your name and begin.")
+    if not st.session_state.get("registered", False):
+        with st.form("trainee_registration"):
+            st.subheader("Trainee registration")
+            name = st.text_input("Full name *", max_chars=100)
+            organisation = st.text_input("Organisation / Department", max_chars=150)
+            joined = st.form_submit_button("Register and enter waiting room", type="primary", use_container_width=True)
+        if joined:
+            if not name.strip():
+                st.error("Please enter your full name.")
+                st.stop()
+            pid = str(uuid.uuid4())
+            st.session_state.participant_id = pid
+            st.session_state.trainee_name = name.strip()
+            st.session_state.organisation = organisation.strip()
+            st.session_state.registered = True
+            register_participant(pid, name.strip(), organisation.strip())
+            st.rerun()
+        st_autorefresh(interval=5000, key="registration_refresh")
         st.stop()
 
-    if remaining <= 0:
-        if not st.session_state.get("started", False):
-            st.error("The assessment time has ended. You did not start the test in time.")
+    if not control["active"]:
+        st.success(f"Registered: {st.session_state.trainee_name}")
+        st.info("You are in the waiting room. The administrator will start the test for everyone.")
+        st_autorefresh(interval=3000, key="waiting_room_refresh")
+        st.stop()
+
+    if not st.session_state.get("started", False):
+        if remaining <= 0:
+            st.warning("The test has ended. Contact the administrator.")
             st.stop()
+        st.session_state.started = True
+        update_participant_status(st.session_state.participant_id, "Started")
+        st.rerun()
+
+    st_autorefresh(interval=1000, key="assessment_timer_refresh")
+    if remaining <= 0:
         responses = {str(i+1): st.session_state.get(f"q_{i+1}") for i in range(len(QUESTIONS))}
         score = sum(1 for i, q in enumerate(QUESTIONS) if responses[str(i+1)] == q["options"][q["a"]])
-        save_mode = save_submission(st.session_state.trainee_name, st.session_state.get("organisation", ""), responses, score)
-        if save_mode:
+        if save_submission(st.session_state.trainee_name, st.session_state.get("organisation", ""), responses, score):
+            update_participant_status(st.session_state.participant_id, "Submitted (time expired)")
             st.session_state.submitted = True
             st.rerun()
         st.stop()
 
-    st_autorefresh(interval=1000, key="assessment_timer_refresh")
-    mins, secs = divmod(remaining, 60)
-    st.markdown(f'<div class="timer">TIME REMAINING&nbsp;&nbsp; {mins:02d}:{secs:02d}</div>', unsafe_allow_html=True)
-
-    if not st.session_state.get("started", False):
-        with st.form("trainee_details"):
-            st.subheader("Trainee details")
-            name = st.text_input("Trainee full name *", max_chars=100)
-            organisation = st.text_input("Organisation / Department", max_chars=150)
-            st.markdown("---")
-            st.subheader("Assessment instructions")
-            st.write("• 20 moderate-difficulty multiple-choice questions")
-            st.write("• One correct answer per question")
-            st.write("• The countdown is controlled by the administrator and is shared by all trainees")
-            st.write("• Your score and answers will not be displayed after submission")
-            start = st.form_submit_button("Enter assessment", type="primary", use_container_width=True)
-        if start:
-            if not name.strip():
-                st.error("Please enter your full name before proceeding.")
-                st.stop()
-            st.session_state.trainee_name = name.strip()
-            st.session_state.organisation = organisation.strip()
-            st.session_state.started = True
-            st.rerun()
-        st.stop()
-
-    st.markdown(f"### Assessment for {st.session_state.trainee_name}")
-    st.caption("The test ends automatically when the administrator-set timer reaches zero.")
+    st.markdown(f"### Assessment: {st.session_state.trainee_name}")
     with st.form("assessment_form"):
         responses = {}
         for i, q in enumerate(QUESTIONS):
-            st.markdown(f'<div class="question-card"><strong>Question {i+1} of {len(QUESTIONS)}</strong><br>{q["q"]}</div>', unsafe_allow_html=True)
-            responses[str(i+1)] = st.radio("Select one answer", q["options"], index=None,
-                                           key=f"q_{i+1}", label_visibility="collapsed")
-            st.caption(f"Topic: {q['topic']}")
+            st.markdown(f'<div class="question-card"><strong>Q{i+1}.</strong> {q["q"]}</div>', unsafe_allow_html=True)
+            responses[str(i+1)] = st.radio("Choose one", q["options"], index=None, key=f"q_{i+1}", label_visibility="collapsed")
             st.markdown("---")
         submitted = st.form_submit_button("Submit assessment", type="primary", use_container_width=True)
     if submitted:
         unanswered = [str(i+1) for i, q in enumerate(QUESTIONS) if responses[str(i+1)] is None]
         if unanswered:
-            st.error(f"Please answer all questions. Unanswered question numbers: {', '.join(unanswered)}")
+            st.error(f"Answer all questions before submitting. Missing: {', '.join(unanswered)}")
         else:
             score = sum(1 for i, q in enumerate(QUESTIONS) if responses[str(i+1)] == q["options"][q["a"]])
-            save_mode = save_submission(st.session_state.trainee_name, st.session_state.get("organisation", ""), responses, score)
-            if save_mode:
+            if save_submission(st.session_state.trainee_name, st.session_state.get("organisation", ""), responses, score):
+                update_participant_status(st.session_state.participant_id, "Submitted")
                 st.session_state.submitted = True
                 st.rerun()
 
@@ -470,11 +276,20 @@ else:
         st.stop()
 
     st.success("Administrator access")
+    st.markdown("### Registered trainees")
+    participants = list_participants()
+    st.metric("Trainees joined", len(participants))
+    if participants:
+        roster = [{"Name": p[1], "Organisation": p[2], "Joined (UTC)": p[3], "Status": p[4]} for p in participants]
+        st.dataframe(roster, use_container_width=True, hide_index=True)
+    else:
+        st.info("No trainees have registered yet.")
+    st_autorefresh(interval=5000, key="admin_roster_refresh")
     control = get_test_control()
     st.markdown("### Assessment control")
-    st.write("The administrator controls when the test becomes available and the shared countdown duration.")
+    st.write("Review the registered trainee list above before starting. The test starts for all waiting trainees when you press Start.")
     duration = st.number_input("Test duration (minutes)", min_value=1, max_value=180, value=control["duration"], step=1)
-    if st.button("Start / Restart test for all trainees", type="primary", use_container_width=True):
+    if st.button(f"Start test for {len(participants)} registered trainees", type="primary", use_container_width=True, disabled=(len(participants) == 0)):
         set_test_control(True, datetime.now(timezone.utc).timestamp(), int(duration))
         st.success(f"Assessment started for all trainees. Duration: {int(duration)} minutes.")
         st.rerun()
