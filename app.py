@@ -7,6 +7,8 @@ import hmac
 import csv
 import io
 import uuid
+import random
+import requests
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -311,9 +313,124 @@ def get_secret(key, default=None):
     except Exception:
         return default
 
+def github_append_result(record):
+    """
+    Append one result to a JSON file in the configured GitHub repository.
+    This provides persistence across Streamlit Cloud restarts/redeployments.
+    Configure GITHUB_TOKEN and GITHUB_REPOSITORY in Streamlit Secrets.
+    """
+    token = get_secret("GITHUB_TOKEN")
+    repository = get_secret("GITHUB_REPOSITORY")
+    branch = get_secret("GITHUB_BRANCH", "main")
+    file_path = get_secret("GITHUB_RESULTS_FILE", "data/dgit_results.json")
+    if not token or not repository:
+        return False, "GitHub persistence is not configured."
+
+    api_url = f"https://api.github.com/repos/{repository}/contents/{file_path}"
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Accept": "application/vnd.github+json",
+        "X-GitHub-Api-Version": "2022-11-28"
+    }
+    try:
+        response = requests.get(api_url, headers=headers, params={"ref": branch}, timeout=20)
+        existing = []
+        sha = None
+        if response.status_code == 200:
+            payload = response.json()
+            sha = payload.get("sha")
+            import base64
+            raw = base64.b64decode(payload.get("content", "")).decode("utf-8")
+            existing = json.loads(raw) if raw.strip() else []
+            if not isinstance(existing, list):
+                raise ValueError("The GitHub results file must contain a JSON list.")
+        elif response.status_code != 404:
+            return False, f"GitHub read failed ({response.status_code}): {response.text[:500]}"
+
+        existing.append(record)
+        import base64
+        encoded = base64.b64encode(
+            json.dumps(existing, ensure_ascii=False, indent=2).encode("utf-8")
+        ).decode("ascii")
+        body = {
+            "message": f"Add DGIT assessment result for {record.get('trainee_name', 'trainee')}",
+            "content": encoded,
+            "branch": branch
+        }
+        if sha:
+            body["sha"] = sha
+        put_response = requests.put(api_url, headers=headers, json=body, timeout=20)
+        if put_response.status_code not in (200, 201):
+            return False, f"GitHub write failed ({put_response.status_code}): {put_response.text[:500]}"
+        return True, f"Saved to {repository}/{file_path}"
+    except Exception as exc:
+        return False, f"GitHub persistence error: {exc}"
+
+def github_read_results():
+    token = get_secret("GITHUB_TOKEN")
+    repository = get_secret("GITHUB_REPOSITORY")
+    branch = get_secret("GITHUB_BRANCH", "main")
+    file_path = get_secret("GITHUB_RESULTS_FILE", "data/dgit_results.json")
+    if not token or not repository:
+        return None
+    api_url = f"https://api.github.com/repos/{repository}/contents/{file_path}"
+    headers = {
+        "Authorization": f"Bearer {token}",
+        "Accept": "application/vnd.github+json",
+        "X-GitHub-Api-Version": "2022-11-28"
+    }
+    response = requests.get(api_url, headers=headers, params={"ref": branch}, timeout=20)
+    if response.status_code == 404:
+        return []
+    response.raise_for_status()
+    import base64
+    raw = base64.b64decode(response.json().get("content", "")).decode("utf-8")
+    data = json.loads(raw) if raw.strip() else []
+    if not isinstance(data, list):
+        raise ValueError("The persistent GitHub results file must contain a JSON list.")
+    return data
+
+def save_local_result_file(record):
+    """Append a backup CSV file in the app folder for immediate download/export."""
+    file_path = APP_DIR / "dgit_results.csv"
+    columns = ["trainee_name", "organisation", "submitted_at_utc", "score", "total_questions",
+               "test_id", "answers_json"]
+    needs_header = not file_path.exists()
+    with file_path.open("a", newline="", encoding="utf-8-sig") as handle:
+        writer = csv.DictWriter(handle, fieldnames=columns)
+        if needs_header:
+            writer.writeheader()
+        row = dict(record)
+        row["answers_json"] = json.dumps(row.get("answers_json", {}), ensure_ascii=False)
+        writer.writerow(row)
+
 def save_submission(name, organisation, answers, score):
-    # Persistent cloud option: configure Google Sheets in Streamlit secrets.
     test_id = get_test_control().get("test_id")
+    record = {
+        "trainee_name": name,
+        "organisation": organisation,
+        "submitted_at_utc": datetime.now(timezone.utc).isoformat(),
+        "score": int(score),
+        "total_questions": len(answers),
+        "test_id": test_id,
+        "answers_json": answers
+    }
+
+    # Always retain a local CSV backup and SQLite record.
+    save_local(name, organisation, answers, score, test_id)
+    save_local_result_file(record)
+
+    # If GitHub storage is configured, require a successful commit for durable cloud storage.
+    github_configured = bool(get_secret("GITHUB_TOKEN") and get_secret("GITHUB_REPOSITORY"))
+    if github_configured:
+        ok, message = github_append_result(record)
+        if not ok:
+            st.error("The result was saved locally, but the persistent GitHub file could not be updated.")
+            st.warning(message)
+            return None
+        st.success(f"Persistent result file updated: {message}")
+
+    # Optional Google Sheets mirror. It is not required when GitHub persistence is configured.
     sheet_id = get_secret("GOOGLE_SHEET_ID")
     service_account = get_secret("gcp_service_account")
     if sheet_id and service_account:
@@ -325,15 +442,14 @@ def save_submission(name, organisation, answers, score):
             client = gspread.authorize(creds)
             sheet = client.open_by_key(sheet_id).sheet1
             if not sheet.get_all_values():
-                sheet.append_row(["Trainee Name", "Organisation", "Submitted At (UTC)", "Score", "Total Questions", "Answers JSON", "Test ID"])
-            sheet.append_row([name, organisation, datetime.now(timezone.utc).isoformat(), score, len(answers), json.dumps(answers), test_id])
-            return "sheets"
-        except Exception as e:
-            st.error("Google Sheets save failed. Please contact the administrator. Submission was not saved to the cloud sheet.")
-            st.exception(e)
-            return None
-    save_local(name, organisation, answers, score, test_id)
-    return "sqlite"
+                sheet.append_row(["Trainee Name", "Organisation", "Submitted At (UTC)",
+                                  "Score", "Total Questions", "Answers JSON", "Test ID"])
+            sheet.append_row([name, organisation, record["submitted_at_utc"], score,
+                              len(answers), json.dumps(answers), test_id])
+        except Exception as exc:
+            st.warning(f"Google Sheets mirror was not updated: {exc}")
+
+    return "github" if github_configured else "local-file"
 
 def load_results():
     conn = db_conn()
@@ -356,7 +472,7 @@ def admin_password_ok(password):
     return hmac.compare_digest(str(password), str(configured))
 
 st.title("DGIT Training Assessment")
-st.caption("Digital Forensics, Investigations and Data Analytics | 20 questions")
+st.caption("Digital Forensics, Investigations and Data Analytics | 50-question bank | 15 questions per test")
 st.info("Enter your details and complete the assessment. Your score and answers are recorded for the training administrator. Your result will not be displayed after submission.")
 
 if "submitted" not in st.session_state:
@@ -623,9 +739,50 @@ else:
         st.session_state.admin_authenticated = False
         st.rerun()
 
+    st.markdown("### Persistent result file")
+    local_result_path = APP_DIR / "dgit_results.csv"
+    if local_result_path.exists():
+        st.download_button(
+            "Download result file (CSV)",
+            local_result_path.read_bytes(),
+            "dgit_results.csv",
+            "text/csv",
+            use_container_width=True
+        )
+    if get_secret("GITHUB_TOKEN") and get_secret("GITHUB_REPOSITORY"):
+        st.success("GitHub persistent file storage is configured. Results are committed to the repository after submission.")
+    else:
+        st.warning("For persistence across Streamlit Cloud restarts, configure GITHUB_TOKEN and GITHUB_REPOSITORY in Streamlit Secrets. The local CSV/SQLite files may be reset by the hosting platform.")
+
     use_sheets = bool(get_secret("GOOGLE_SHEET_ID") and get_secret("gcp_service_account"))
+    use_github = bool(get_secret("GITHUB_TOKEN") and get_secret("GITHUB_REPOSITORY"))
     try:
-        if use_sheets:
+        if use_github:
+            records = github_read_results()
+            st.write(f"Total persistent submissions: **{len(records)}**")
+            if records:
+                display = [{
+                    "Trainee Name": r.get("trainee_name", ""),
+                    "Organisation": r.get("organisation", ""),
+                    "Submitted At (UTC)": r.get("submitted_at_utc", ""),
+                    "Score": f"{r.get('score', 0)}/{r.get('total_questions', 15)}",
+                    "Test ID": r.get("test_id", "")
+                } for r in records]
+                st.dataframe(display, use_container_width=True, hide_index=True)
+                output = io.StringIO()
+                fields = ["trainee_name", "organisation", "submitted_at_utc", "score",
+                          "total_questions", "test_id", "answers_json"]
+                writer = csv.DictWriter(output, fieldnames=fields)
+                writer.writeheader()
+                for record in records:
+                    row = dict(record)
+                    row["answers_json"] = json.dumps(row.get("answers_json", {}), ensure_ascii=False)
+                    writer.writerow(row)
+                st.download_button("Download persistent results CSV", output.getvalue(),
+                                   "dgit_assessment_results.csv", "text/csv")
+            else:
+                st.info("No submissions recorded yet.")
+        elif use_sheets:
             records = load_sheet_results()
             if records:
                 st.write(f"Total submissions: **{len(records)}**")
@@ -656,7 +813,8 @@ else:
                 st.download_button("Download detailed results CSV", output.getvalue(), "dgit_assessment_results.csv", "text/csv")
             else:
                 st.info("No submissions recorded yet.")
-            st.warning("SQLite mode: Streamlit Community Cloud local files may be reset when the app restarts or redeploys. Configure Google Sheets storage for persistent hosted results.")
+            st.warning("SQLite mode: Streamlit Cloud may reset local files. Configure GitHub or Google Sheets persistence.")
+
     except Exception:
         st.error("Unable to retrieve results. Check the storage configuration.")
         st.exception(Exception("Storage retrieval failed"))
